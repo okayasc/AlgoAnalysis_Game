@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algo Highway — Learn Big-O Complexity by Driving</title>
+<style>
+  :root{
+    /* Sunset racing theme — deep indigo night with warm neon */
+    --asphalt:#1a1430; --asphalt-dark:#0f0a1f;
+    --amber:#ff9e2c;            /* warm gold */
+    --cyan:#ff7b54;             /* repurposed: warm coral accent */
+    --magenta:#ff4d8d;          /* hot pink */
+    --green:#5eead4;            /* teal for 'correct' */
+    --red:#ff5470;              /* warm red for 'wrong' */
+    --paper:#fdf0e6;            /* warm off-white text */
+    --ink:#1a1430;              /* dark text on light panels */
+    --sunset1:#ff9e2c; --sunset2:#ff4d8d; --sunset3:#c724b1;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--asphalt-dark);color:var(--paper);
+    font-family:'Inter','Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh;
+    display:flex;align-items:center;justify-content:center;user-select:none;
+  }
+  #wrap{
+    position:relative;width:100%;max-width:480px;height:100vh;max-height:900px;
+    background:linear-gradient(180deg,#2a1a4a 0%,#1a1430 55%,#0f0a1f 100%);
+    box-shadow:0 0 120px rgba(255,77,141,.25);overflow:hidden;
+  }
+  canvas{display:block;width:100%;height:100%;background:transparent}
+  #hud{
+    position:absolute;top:0;left:0;right:0;padding:10px 14px;z-index:10;
+    display:flex;justify-content:space-between;pointer-events:none;
+  }
+  .hb{background:rgba(15,10,31,.8);backdrop-filter:blur(8px);border:1px solid rgba(255,158,44,.35);border-radius:12px;
+    padding:5px 9px;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+  .hl{color:rgba(253,240,230,.55);font-size:8px;font-weight:700}
+  .hv{color:var(--amber);font-size:15px;font-weight:900}
+  #lessonChip{
+    position:absolute;top:54px;left:50%;transform:translateX(-50%);z-index:10;
+    background:rgba(15,10,31,.88);backdrop-filter:blur(8px);border:1px solid var(--magenta);border-radius:20px;
+    padding:4px 14px;font-size:10px;color:#ff8fb5;font-weight:800;
+    letter-spacing:1px;pointer-events:none;text-transform:uppercase;
+  }
+  #goldChip{
+    position:absolute;top:54px;right:12px;z-index:10;
+    background:rgba(15,10,31,.88);backdrop-filter:blur(8px);border:1px solid rgba(255,158,44,.6);border-radius:20px;
+    padding:4px 12px;font-size:12px;color:var(--amber);font-weight:900;
+    letter-spacing:1px;pointer-events:none;
+  }
+  #comboChip{
+    position:absolute;top:84px;right:12px;z-index:10;
+    background:linear-gradient(135deg,var(--sunset2),var(--sunset3));
+    border-radius:20px;padding:3px 12px;font-size:12px;color:#fff;font-weight:900;
+    letter-spacing:.5px;pointer-events:none;opacity:0;transform:scale(.7);
+    transition:opacity .2s,transform .2s;box-shadow:0 4px 14px rgba(255,77,141,.5);
+  }
+  #comboChip.show{opacity:1;transform:scale(1);animation:comboPulse 1s ease-in-out infinite}
+  @keyframes comboPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  /* Lesson banner */
+  #banner{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:92%;max-width:430px;
+    background:linear-gradient(135deg,#2a1a4a,#3d1a52);
+    color:var(--paper);
+    border:2px solid var(--magenta);border-radius:24px;padding:26px 22px;z-index:30;
+    box-shadow:0 20px 60px rgba(199,36,177,.4),0 0 40px rgba(255,77,141,.25);display:none;text-align:center;
+  }
+  #banner.show{display:block;animation:cin .4s ease-out}
+  #banner .bn{font-size:12px;letter-spacing:4px;opacity:.75;color:var(--magenta);font-weight:800}
+  #banner .bt{font-size:28px;font-weight:900;letter-spacing:1px;margin:8px 0 12px;
+    background:linear-gradient(135deg,var(--sunset1),var(--sunset2));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;text-transform:uppercase}
+  #banner .bg{font-size:15px;line-height:1.55;color:var(--paper)}
+  #banner .bgo{margin-top:14px;font-size:12px;letter-spacing:2px;opacity:.75;font-weight:700}
+  #banner .bgo b{font-size:16px;color:var(--amber)}
+  @keyframes cin{from{transform:translate(-50%,-50%) scale(.85);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  /* Teach card — clean light card so the visual is crisp */
+  #teach{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:94%;max-width:450px;
+    background:linear-gradient(180deg,#fdf0e6,#f6e3d0);
+    color:var(--ink);
+    border:2px solid var(--amber);border-radius:24px;padding:18px;z-index:22;
+    box-shadow:0 20px 60px rgba(255,77,141,.4),0 0 40px rgba(255,158,44,.2);display:none;
+  }
+  #teach.show{display:block;animation:cin .35s ease-out}
+  #teachBadge{display:inline-block;
+    background:linear-gradient(135deg,var(--sunset1),var(--sunset2));color:#fff;
+    padding:5px 16px;font-size:12px;letter-spacing:2px;font-weight:900;border-radius:14px;margin-bottom:10px}
+  #teachCanvas{display:block;width:100%;height:240px;background:#ffffff;
+    border:2px solid rgba(255,158,44,.5);border-radius:14px;margin-bottom:10px}
+  #teachPoint{font-size:19px;line-height:1.45;font-weight:900;color:var(--ink);text-align:center}
+  #teachSub{font-size:15px;line-height:1.5;color:var(--ink);text-align:center;margin-top:8px;opacity:.8}
+  #teachCount{margin-top:14px;text-align:center;font-size:12px;letter-spacing:2px;color:rgba(26,20,48,.65);font-weight:700}
+  #teachCount b{color:var(--magenta);font-size:17px}
+  /* Question prompt strip */
+  #qStrip{
+    position:absolute;left:50%;transform:translateX(-50%);
+    bottom:150px;width:94%;max-width:450px;z-index:14;
+    background:rgba(15,10,31,.94);backdrop-filter:blur(8px);
+    border:2px solid var(--amber);border-radius:16px;
+    padding:14px 18px;font-size:17px;line-height:1.45;text-align:center;
+    color:var(--paper);display:none;font-weight:800;
+  }
+  #qStrip.show{display:block}
+  #qStrip b{color:var(--amber)}
+  /* Feedback */
+  #fb{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:25;
+    padding:20px 26px;font-size:20px;font-weight:900;text-align:center;display:none;
+    background:linear-gradient(180deg,#fdf0e6,#f6e3d0);color:var(--ink);
+    border:2px solid var(--ink);border-radius:18px;max-width:92%;
+    box-shadow:0 20px 50px rgba(0,0,0,.6);
+  }
+  #fb.show{display:block;animation:pop .3s ease-out}
+  #fb.ok{border-color:#2dd4bf;box-shadow:0 20px 50px rgba(45,212,191,.55),0 0 40px rgba(94,234,212,.4)}
+  #fb.ok #fbHead{color:#0d9488}
+  #fb.no{border-color:var(--red);box-shadow:0 20px 50px rgba(255,84,112,.55),0 0 40px rgba(255,77,141,.4)}
+  #fb.no #fbHead{color:#be123c}
+  #fbWhy{color:var(--ink);font-size:15px;font-weight:600;line-height:1.55;margin-top:10px;white-space:pre-line;opacity:.9}
+  @keyframes pop{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}100%{transform:translate(-50%,-50%) scale(1);opacity:1}}
+  /* Screens — sunset gradient */
+  .scr{position:absolute;inset:0;
+    background:linear-gradient(180deg,#2a1a4a 0%,#3d1a52 35%,#1a1430 75%,#0f0a1f 100%);
+    z-index:50;display:none;
+    flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center;overflow-y:auto}
+  .scr.show{display:flex}
+  .scr h1{font-size:34px;letter-spacing:1px;margin-bottom:6px;font-weight:900;
+    background:linear-gradient(135deg,var(--sunset1),var(--sunset2),var(--sunset3));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .scr .sub{font-size:11px;letter-spacing:3px;color:rgba(253,240,230,.6);margin-bottom:16px;text-transform:uppercase;font-weight:700}
+  .scr p{font-size:15px;line-height:1.6;margin-bottom:12px;max-width:400px;color:rgba(253,240,230,.9)}
+  .road{display:flex;flex-direction:column;gap:8px;margin:14px 0;max-width:410px;width:100%;font-size:13px;letter-spacing:.3px}
+  .road>div{background:rgba(253,240,230,.06);padding:10px 13px;border-left:3px solid var(--magenta);border-radius:8px;text-align:left;color:var(--paper)}
+  .road b{color:var(--amber);font-weight:900}
+  .ch{background:rgba(255,158,44,.1);border:1px solid rgba(255,158,44,.5);border-radius:14px;
+    padding:11px;margin:12px 0;font-size:11px;letter-spacing:.5px;max-width:340px;color:var(--paper)}
+  .ch .k{display:inline-block;background:var(--amber);color:var(--ink);padding:3px 9px;margin:0 3px;font-weight:900;border-radius:6px}
+  .btn{background:linear-gradient(135deg,var(--sunset1),var(--sunset2));color:#fff;
+    border:none;padding:13px 28px;font-family:inherit;font-size:13px;font-weight:900;letter-spacing:2px;
+    cursor:pointer;margin:5px;text-transform:uppercase;border-radius:14px;
+    box-shadow:0 10px 26px rgba(255,77,141,.4);transition:transform .12s,box-shadow .12s}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(255,77,141,.55)}
+  .btn:active{transform:translateY(1px);box-shadow:0 5px 14px rgba(255,77,141,.4)}
+  .btn.sec{background:rgba(253,240,230,.1);color:var(--paper);border:1px solid rgba(253,240,230,.25);box-shadow:0 8px 22px rgba(0,0,0,.3)}
+  .btn.sec:hover{background:rgba(253,240,230,.18)}
+  .sr{display:flex;justify-content:space-between;width:100%;max-width:340px;padding:9px 14px;border-radius:10px;
+    background:rgba(253,240,230,.06);margin-bottom:6px;font-size:12px;letter-spacing:.5px}
+  .sr .sl{color:rgba(253,240,230,.7)}
+  .sr .sv{color:var(--amber);font-weight:900}
+  .rc{background:linear-gradient(180deg,#fdf0e6,#f6e3d0);color:var(--ink);padding:13px;margin:9px 0;
+    width:100%;max-width:400px;
+    border:2px solid rgba(255,77,141,.5);border-radius:16px;text-align:left;font-size:12px;line-height:1.5;
+    box-shadow:0 10px 24px rgba(0,0,0,.35)}
+  .rc canvas{display:block;width:100%;height:130px;background:#ffffff;border:1.5px solid rgba(255,158,44,.5);border-radius:10px;margin:8px 0}
+  .rc .rt{font-size:15px;font-weight:900;color:#0d9488;margin:4px 0}
+  .rlist{width:100%;max-width:400px}
+  .sg{display:grid;grid-template-columns:1fr;gap:10px;width:100%;max-width:400px;margin-bottom:14px}
+  .si{background:linear-gradient(180deg,rgba(253,240,230,.08),rgba(253,240,230,.04));
+    color:var(--paper);padding:12px;border:1px solid rgba(253,240,230,.18);border-radius:14px;
+    text-align:left;display:flex;align-items:flex-start;gap:12px;
+    box-shadow:0 10px 22px rgba(0,0,0,.3)}
+  .si .ic{font-size:30px;flex-shrink:0;width:42px;text-align:center}
+  .si .nm{font-weight:900;font-size:13px;letter-spacing:.5px;margin-bottom:3px;color:var(--paper)}
+  .si .ds{font-size:11px;line-height:1.4;opacity:.75;margin-bottom:6px;color:var(--paper)}
+  .si .ft{display:flex;justify-content:space-between;align-items:center}
+  .si .ct{color:var(--amber);font-weight:900;font-size:12px;
+    background:rgba(255,158,44,.12);padding:3px 9px;border-radius:6px;border:1px solid rgba(255,158,44,.3)}
+  .si .cn{background:rgba(94,234,212,.15);color:var(--green);padding:3px 9px;font-size:10px;border-radius:6px;font-weight:900;border:1px solid rgba(94,234,212,.3)}
+  .si button{background:linear-gradient(135deg,var(--sunset1),var(--sunset2));color:#fff;border:none;
+    padding:6px 12px;font-family:inherit;font-size:11px;font-weight:900;cursor:pointer;text-transform:uppercase;
+    border-radius:8px;letter-spacing:.5px;box-shadow:0 4px 10px rgba(255,77,141,.3)}
+  .si button:disabled{background:#475569;opacity:.5;cursor:not-allowed;box-shadow:none}
+  .si button.eq{background:linear-gradient(135deg,#2dd4bf,#0891b2)}
+  .si .bd{flex:1}
+  #shopScr .bnk{
+    background:linear-gradient(135deg,rgba(255,158,44,.15),rgba(255,77,141,.1));
+    border:1.5px solid var(--amber);border-radius:14px;padding:11px 22px;
+    margin-bottom:18px;font-size:18px;color:var(--amber);letter-spacing:2px;font-weight:900}
+  .pp{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:11px;max-width:360px}
+  .pp button{background:rgba(253,240,230,.08);border:1px solid rgba(253,240,230,.22);color:var(--paper);
+    padding:7px 12px;font-size:10px;letter-spacing:.5px;cursor:pointer;font-family:inherit;
+    font-weight:800;text-transform:uppercase;border-radius:10px}
+  .pp button.on{background:linear-gradient(135deg,var(--sunset1),var(--sunset2));color:#fff;border-color:transparent;box-shadow:0 4px 10px rgba(255,77,141,.3)}
+  #touch{position:absolute;bottom:0;left:0;right:0;height:80px;z-index:15;display:none;pointer-events:none}
+  .th{position:absolute;top:0;bottom:0;width:50%;pointer-events:auto}
+  #tl{left:0}#tr{right:0}
+  @media (hover:none) and (pointer:coarse){#touch{display:block}}
+  @media (max-width:500px){#wrap{max-width:100%;max-height:100%}}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div class="hb"><div class="hl">Score</div><div class="hv" id="vScore">0</div></div>
+    <div class="hb" style="text-align:center"><div class="hl">Lives</div><div class="hv" id="vLives">❤️❤️❤️</div></div>
+    <div class="hb" style="text-align:right"><div class="hl">Mastery</div><div class="hv" id="vAcc">—</div></div>
+  </div>
+  <div id="lessonChip">Lesson 1</div>
+  <div id="goldChip">💰 <span id="vGold">0</span></div>
+  <div id="comboChip"><span id="vCombo"></span></div>
+
+  <div id="banner">
+    <div class="bn" id="bnNum">LESSON 1 OF 4</div>
+    <div class="bt" id="bnTitle"></div>
+    <div class="bg" id="bnGoal"></div>
+    <div class="bgo">STARTS IN <b id="bnSecs">3</b></div>
+  </div>
+
+  <div id="teach">
+    <span id="teachBadge">HOW TO READ THIS</span>
+    <canvas id="teachCanvas"></canvas>
+    <div id="teachPoint"></div>
+    <div id="teachSub"></div>
+    <div id="teachCount">DRIVE IN <b id="teachSecs">12</b></div>
+  </div>
+
+  <div id="qStrip"></div>
+
+  <div id="fb">
+    <div id="fbHead"></div>
+    <div id="fbWhy"></div>
+  </div>
+
+  <div id="touch"><div class="th" id="tl"></div><div class="th" id="tr"></div></div>
+
+  <!-- START -->
+  <div class="scr show" id="startScr">
+    <h1>ALGO HIGHWAY</h1>
+    <div class="sub">Learn Big-O Complexity</div>
+    <p>You don't read definitions — you <b>read real growth graphs & charts while driving</b>. A visual appears at the top of the road. Steer through the <b>gate</b> with the correct complexity. Chain correct answers to build a <b>🔥 combo</b> for up to <b>5× points</b>! Wrong? You keep <b>3 ❤️ lives</b>: the game shows you why, then lets you <b>try again</b>. Learn by seeing, not memorizing.</p>
+    <div class="road">
+      <div><b>Lesson 1 ·</b> Reading Growth Curves — higher = slower</div>
+      <div><b>Lesson 2 ·</b> Counting Operations — read the bars at a given n</div>
+      <div><b>Lesson 3 ·</b> Comparing Algorithms — which curve stays lower?</div>
+      <div><b>Lesson 4 ·</b> Mixed — real-world scenarios & exponential blow-ups</div>
+    </div>
+    <div id="pPills" class="pp"></div>
+    <div class="ch"><span class="k">←</span> <span class="k">→</span> or <span class="k">A</span> <span class="k">D</span> to choose your gate</div>
+    <button class="btn" onclick="startGame()">▶ START LESSON 1</button>
+    <button class="btn sec" onclick="showShop()">🏪 MARKET (<span id="sBank">0</span> 💰)</button>
+    <p style="font-size:10px;opacity:.5;margin-top:12px">Analysis of Algorithms · Asymptotic Complexity</p>
+  </div>
+
+  <div class="scr" id="endScr">
+    <h1 id="eTitle">RUN OVER</h1>
+    <div class="sub" id="eReason">Run complete</div>
+    <div class="sr"><span class="sl">Score</span><span class="sv" id="fScore">0</span></div>
+    <div class="sr"><span class="sl">Lesson Reached</span><span class="sv" id="fLesson">1</span></div>
+    <div class="sr"><span class="sl">Visuals Read</span><span class="sv" id="fQ">0</span></div>
+    <div class="sr"><span class="sl">Accuracy</span><span class="sv" id="fAcc">0%</span></div>
+    <div class="sr"><span class="sl">💰 Gold This Run</span><span class="sv" id="fGold">0</span></div>
+    <div class="sr"><span class="sl">🏦 Total Bank</span><span class="sv" id="fBank">0</span></div>
+    <button class="btn" onclick="startGame()">▶ TRY AGAIN</button>
+    <button class="btn sec" onclick="showShop()">🏪 MARKET</button>
+    <button class="btn sec" onclick="showReview()" id="revBtn">📖 REVIEW</button>
+  </div>
+
+  <div class="scr" id="revScr">
+    <h1>REVIEW</h1>
+    <div class="sub">Visuals you misread</div>
+    <div class="rlist" id="revList"></div>
+    <button class="btn" onclick="backToEnd()">← BACK</button>
+  </div>
+
+  <div class="scr" id="shopScr">
+    <h1>🏪 MARKET</h1>
+    <div class="sub">Spend your gold</div>
+    <div class="bnk">🏦 BANK: <span id="shBank">0</span> 💰</div>
+    <div class="sg" id="shGrid"></div>
+    <button class="btn" onclick="closeShop()">← BACK</button>
+  </div>
+</div>
+
+<script>
+/* ======================================================================
+   ALGO HIGHWAY — VISUAL Big-O complexity teaching game
+   Core idea: a real growth graph or comparison-bar chart is DRAWN on screen.
+   The player steers through one of 3 GATES with the correct complexity class.
+   No code reading, no definitions — learn by seeing & deciding.
+   Topic: Asymptotic Complexity / Big-O (Analysis of Algorithms)
+   ====================================================================== */
+
+/* ---------------- ALGORITHM VISUAL DRAWING PRIMITIVES ----------------
+   A renderer for Big-O / complexity teaching. Supports three visual kinds:
+   - kind:'growth' → an n-vs-operations graph plotting one or more complexity
+                     curves (constant, log, linear, nlogn, quadratic, cubic, exp)
+   - kind:'code'   → a small pseudo-code block with line numbers (loops etc.)
+   - kind:'bars'   → labelled horizontal bars comparing growth at some n
+   Everything is drawn in a virtual 300x150 space scaled to the canvas.
+*/
+const COMPLEXITY_FNS = {
+  '1':        (n)=>1,
+  'logn':     (n)=>Math.log2(n+1),
+  'n':        (n)=>n,
+  'nlogn':    (n)=>n*Math.log2(n+1),
+  'n2':       (n)=>n*n,
+  'n3':       (n)=>n*n*n,
+  '2n':       (n)=>Math.pow(2,n),
+};
+const COMPLEXITY_COLOR = {
+  '1':'#10b981','logn':'#22d3ee','n':'#3b82f6','nlogn':'#a855f7',
+  'n2':'#f59e0b','n3':'#ec4899','2n':'#ef4444',
+};
+const COMPLEXITY_LABEL = {
+  '1':'O(1)','logn':'O(log n)','n':'O(n)','nlogn':'O(n log n)',
+  'n2':'O(n\u00b2)','n3':'O(n\u00b3)','2n':'O(2\u207f)',
+};
+
+function drawViz(g, spec, CW, CH) {
+  g.clearRect(0,0,CW,CH);
+  if (spec.kind === 'growth') return drawGrowth(g, spec, CW, CH);
+  if (spec.kind === 'code')   return drawCode(g, spec, CW, CH);
+  if (spec.kind === 'bars')   return drawBars(g, spec, CW, CH);
+}
+
+// n-vs-operations line graph
+function drawGrowth(g, spec, CW, CH) {
+  const padL=34, padR=12, padT=14, padB=24;
+  const plotW=CW-padL-padR, plotH=CH-padT-padB;
+  const curves = spec.curves;                 // array of complexity keys
+  const nMax = spec.nMax || 16;
+  // find max value across curves for scaling (cap exponential so others stay visible)
+  let yMax=0;
+  curves.forEach(k=>{ for(let n=1;n<=nMax;n++){ yMax=Math.max(yMax, Math.min(COMPLEXITY_FNS[k](n), spec.yCap||4000)); } });
+  yMax = Math.max(yMax, 4);
+
+  // axes
+  g.strokeStyle='#64748b'; g.lineWidth=1.5;
+  g.beginPath(); g.moveTo(padL,padT); g.lineTo(padL,padT+plotH); g.lineTo(padL+plotW,padT+plotH); g.stroke();
+  // axis labels
+  g.fillStyle='#475569'; g.font='800 13px Inter,system-ui'; g.textAlign='center';
+  g.fillText('n →', padL+plotW-14, padT+plotH+17);
+  g.save(); g.translate(13,padT+plotH/2); g.rotate(-Math.PI/2);
+  g.fillText('ops', 0, 0); g.restore();
+
+  const X = (n)=> padL + (n/nMax)*plotW;
+  const Y = (v)=> padT + plotH - (Math.min(v,spec.yCap||4000)/yMax)*plotH;
+
+  // First draw all the curves (thicker for clarity)
+  curves.forEach(k=>{
+    g.strokeStyle = COMPLEXITY_COLOR[k]; g.lineWidth=3.5; g.lineJoin='round';
+    g.beginPath();
+    let started=false;
+    for(let n=1;n<=nMax;n+=0.5){
+      const v=COMPLEXITY_FNS[k](n);
+      const px=X(n), py=Y(v);
+      if(!started){g.moveTo(px,py);started=true;}else{g.lineTo(px,py);}
+    }
+    g.stroke();
+  });
+
+  // Then draw labels as a clear legend stack in the top-left of the plot,
+  // each on its own row with a colour swatch — never overlapping, easy to read.
+  if(spec.showLabels!==false){
+    g.textAlign='left'; g.textBaseline='middle';
+    const fs=17, rowH=fs+7;
+    const lx=padL+9, ly0=padT+13;
+    curves.forEach((k,i)=>{
+      const ry=ly0+i*rowH;
+      const label=COMPLEXITY_LABEL[k];
+      g.font='900 '+fs+'px Inter,system-ui';
+      const tw=g.measureText(label).width;
+      // translucent rounded background for contrast
+      g.fillStyle='rgba(255,255,255,0.88)';
+      g.fillRect(lx-5, ry-rowH/2+1, tw+26, rowH-2);
+      // colour swatch
+      g.fillStyle=COMPLEXITY_COLOR[k];
+      g.fillRect(lx-1, ry-7, 14, 14);
+      // label text in the curve's colour
+      g.fillStyle=COMPLEXITY_COLOR[k];
+      g.fillText(label, lx+19, ry);
+    });
+  }
+  // optional title (bottom-right so it never collides with the legend)
+  if(spec.title){
+    g.fillStyle='#475569'; g.font='800 13px Inter,system-ui'; g.textAlign='right';
+    g.fillText(spec.title, padL+plotW-4, padT+plotH-5);
+  }
+}
+
+// pseudo-code block with line numbers; supports highlighting nested loops
+function drawCode(g, spec, CW, CH) {
+  const lines = spec.lines;                    // array of strings
+  const pad=10, lh=Math.min(20,(CH-pad*2)/lines.length);
+  g.font=`${Math.max(10,Math.min(14,lh-5))}px 'Courier New',monospace`;
+  g.textBaseline='middle';
+  lines.forEach((ln,i)=>{
+    const y=pad+lh*i+lh/2;
+    // highlight band for marked lines (e.g. the hot loop)
+    if(spec.highlight && spec.highlight.includes(i)){
+      g.fillStyle='rgba(245,158,11,0.18)';
+      g.fillRect(2,y-lh/2,CW-4,lh);
+    }
+    // line number
+    g.fillStyle='#94a3b8'; g.textAlign='right';
+    g.fillText(String(i+1), pad+12, y);
+    // code (indentation preserved via leading spaces)
+    g.fillStyle='#0f172a'; g.textAlign='left';
+    g.fillText(ln, pad+20, y);
+  });
+}
+
+// horizontal comparison bars (e.g. "how many ops at n=10")
+function drawBars(g, spec, CW, CH) {
+  const items=spec.items;                      // [{label, key}] using complexity fns
+  const n=spec.n||10;
+  const titleH=spec.title?20:0;
+  const pad=8, rowH=(CH-pad*2-titleH)/items.length;
+  let vMax=0; items.forEach(it=>{vMax=Math.max(vMax,COMPLEXITY_FNS[it.key](n));});
+  const labelW=96, barMaxW=CW-labelW-pad*2-46;
+  items.forEach((it,i)=>{
+    const y=pad+rowH*i, v=COMPLEXITY_FNS[it.key](n);
+    const w=Math.max(4,(v/vMax)*barMaxW);
+    const cy=y+rowH*0.5;
+    // bar
+    g.fillStyle=COMPLEXITY_COLOR[it.key]||'#3b82f6';
+    g.fillRect(labelW,cy-rowH*0.28,w,rowH*0.56);
+    // label (bigger, in the bar's colour)
+    g.fillStyle=COMPLEXITY_COLOR[it.key]||'#0f172a'; g.font='900 18px Inter,system-ui';
+    g.textAlign='left'; g.textBaseline='middle';
+    g.fillText(COMPLEXITY_LABEL[it.key]||it.label, pad, cy);
+    // value at the end of the bar
+    g.fillStyle='#1e293b'; g.font='800 15px Inter,system-ui';
+    g.fillText(v>=1000?Math.round(v).toLocaleString():String(Math.round(v)), labelW+w+6, cy);
+  });
+  if(spec.title){
+    g.fillStyle='#334155'; g.font='800 14px Inter,system-ui'; g.textAlign='center'; g.textBaseline='alphabetic';
+    g.fillText(spec.title, CW/2, CH-4);
+  }
+}
+
+/* ---------------- LESSONS ---------------- */
+const LESSONS = [
+  {id:1, title:'Reading Growth Curves',
+   goal:"On an n-vs-operations graph, the higher and steeper the curve, the slower the algorithm. Learn to rank O(1), O(log n), O(n), O(n\u00b2)...",
+   clearAfter:4},
+  {id:2, title:'Counting Operations',
+   goal:"Plug n into the formula and read the bars. O(n)=n, O(n\u00b2)=n\u00d7n, O(log n)= the number of halvings. See how fast each grows.",
+   clearAfter:4},
+  {id:3, title:'Comparing Algorithms',
+   goal:"Two algorithms, two curves. The one that stays lower wins for large inputs. Learn which complexity class beats which.",
+   clearAfter:4},
+  {id:4, title:'Mixed Mastery',
+   goal:"Everyday scenarios, dominant terms and exponential blow-ups. Read any graph and pick the right complexity class.",
+   clearAfter:999},
+];
+
+/* ---------------- QUESTION BANK ----------------
+   All questions are VISUAL (growth graphs & comparison bars). No code blocks.
+   diagram   = the visual shown on the road billboard (the question).
+   teach.tdiagram = the visual on the teaching card.
+   teach.point/sub = a short hint that teaches the PRINCIPLE without giving the answer.
+   why = the explanation shown after answering.
+*/
+const BANK = [
+  /* ===== LESSON 1 — Reading Growth Curves ===== */
+  {lesson:1,
+   diagram:{kind:'growth', curves:['1','n','n2'], nMax:16, yCap:300},
+   teach:{point:"Higher curve = slower.", sub:"Same n, more operations means a worse (slower) algorithm.",
+          tdiagram:{kind:'growth', curves:['1','n','n2'], nMax:16, yCap:300}},
+   q:"Three curves are plotted. Which complexity is the <b>FASTEST</b> (fewest ops)?",
+   gates:["O(1)","O(n)","O(n\u00b2)"], correct:0,
+   why:"O(1) is the flat line at the bottom — it stays constant no matter how big n gets. The higher the curve, the slower."},
+
+  {lesson:1,
+   diagram:{kind:'growth', curves:['1','n','n2'], nMax:16, yCap:300},
+   teach:{point:"Steepest curve = slowest.", sub:"The curve that shoots up fastest is the worst as n grows.",
+          tdiagram:{kind:'growth', curves:['1','n','n2'], nMax:16, yCap:300}},
+   q:"Which curve is the <b>SLOWEST</b> (most operations as n grows)?",
+   gates:["O(n\u00b2)","O(n)","O(1)"], correct:0,
+   why:"O(n\u00b2) climbs the steepest. For large n it needs far more operations than O(n) or O(1)."},
+
+  {lesson:1,
+   diagram:{kind:'growth', curves:['logn','n','nlogn'], nMax:16, yCap:80},
+   teach:{point:"The flattest curve wins.", sub:"The lower and flatter a curve stays, the fewer operations it needs.",
+          tdiagram:{kind:'growth', curves:['logn','n','nlogn'], nMax:16, yCap:80}},
+   q:"Which curve grows the <b>SLOWEST</b> here?",
+   gates:["O(log n)","O(n)","O(n log n)"], correct:0,
+   why:"O(log n) is the lowest, nearly-flat curve. Each time n doubles it only goes up by one step."},
+
+  {lesson:1,
+   diagram:{kind:'growth', curves:['n','nlogn','n2'], nMax:16, yCap:300},
+   teach:{point:"Look for the middle curve.", sub:"One curve sits just above linear but well below quadratic.",
+          tdiagram:{kind:'growth', curves:['n','nlogn','n2'], nMax:16, yCap:300}},
+   q:"The MIDDLE curve here is just above O(n). Which complexity is it?",
+   gates:["O(n log n)","O(1)","O(n\u00b3)"], correct:0,
+   why:"O(n log n) lies between linear and quadratic — the signature of good comparison sorts like Merge Sort."},
+
+  {lesson:1,
+   diagram:{kind:'growth', curves:['n','2n'], nMax:12, yCap:1000},
+   teach:{point:"Steepness = cost.", sub:"A curve that rockets up almost vertically is the most expensive growth there is.",
+          tdiagram:{kind:'growth', curves:['n','2n'], nMax:12, yCap:1000}},
+   q:"One curve goes nearly vertical very fast. Which complexity is that?",
+   gates:["O(2\u207f)","O(n)","O(log n)"], correct:0,
+   why:"O(2\u207f) is exponential: each +1 to n doubles the work. It rockets up and is intractable for large n."},
+
+  {lesson:1,
+   diagram:{kind:'growth', curves:['1','logn'], nMax:16, yCap:8, title:'two low curves'},
+   teach:{point:"Flat vs slowly rising.", sub:"One curve never moves; the other creeps upward very gently.",
+          tdiagram:{kind:'growth', curves:['1','logn'], nMax:16, yCap:8, title:'two low curves'}},
+   q:"Which of these two is the <b>FASTER</b> (flatter) class?",
+   gates:["O(1)","O(log n)","they tie"], correct:0,
+   why:"O(1) never grows at all, while O(log n) slowly rises. Constant time is the faster of the two."},
+
+  /* ===== LESSON 2 — Counting Operations (bars) ===== */
+  {lesson:2,
+   diagram:{kind:'bars', items:[{key:'1'},{key:'logn'},{key:'n'},{key:'n2'}], n:16, title:'operations at n = 16'},
+   teach:{point:"Longer bar = more work.", sub:"At a fixed n, the longest bar is the class doing the most operations.",
+          tdiagram:{kind:'bars', items:[{key:'1'},{key:'logn'},{key:'n'},{key:'n2'}], n:16, title:'operations at n = 16'}},
+   q:"At n=16, which class needs the <b>MOST</b> operations (longest bar)?",
+   gates:["O(n\u00b2)","O(n)","O(1)"], correct:0,
+   why:"At n=16, O(n\u00b2)=256 — much longer than O(n)=16 or O(1)=1. The longest bar is the slowest class."},
+
+  {lesson:2,
+   diagram:{kind:'bars', items:[{key:'n'},{key:'n2'}], n:10, title:'exact ops at n = 10'},
+   teach:{point:"Plug the number in.", sub:"Substitute n into the formula. A squared cost means n times n.",
+          tdiagram:{kind:'bars', items:[{key:'n'},{key:'n2'}], n:10, title:'exact ops at n = 10'}},
+   q:"For an O(n\u00b2) algorithm at <b>n=10</b>, how many operations (roughly)?",
+   gates:["100","10","20"], correct:0,
+   why:"O(n\u00b2) at n=10 means 10\u00b2 = 100 operations. The quadratic bar is 10\u00d7 the linear one here."},
+
+  {lesson:2,
+   diagram:{kind:'bars', items:[{key:'logn'},{key:'n'}], n:8, title:'exact ops at n = 8'},
+   teach:{point:"Count the halvings.", sub:"A logarithmic cost counts how many times you can halve n down to 1.",
+          tdiagram:{kind:'bars', items:[{key:'logn'},{key:'n'}], n:8, title:'exact ops at n = 8'}},
+   q:"For an O(log n) algorithm at <b>n=8</b>, how many operations?",
+   gates:["3","8","16"], correct:0,
+   why:"log\u2082(8) = 3 (since 2\u00b3=8). Logarithmic work grows incredibly slowly."},
+
+  {lesson:2,
+   diagram:{kind:'bars', items:[{key:'n'},{key:'n2'},{key:'n3'}], n:5, title:'ops at n = 5'},
+   teach:{point:"Substitute, then compute.", sub:"A cubic cost means n \u00d7 n \u00d7 n. Work it out for the given n.",
+          tdiagram:{kind:'bars', items:[{key:'n'},{key:'n2'},{key:'n3'}], n:5, title:'ops at n = 5'}},
+   q:"For an O(n\u00b3) algorithm at <b>n=5</b>, how many operations?",
+   gates:["125","25","15"], correct:0,
+   why:"O(n\u00b3) at n=5 = 5\u00b3 = 125. Cubic grows fast — triple-nested loops get expensive."},
+
+  {lesson:2,
+   diagram:{kind:'bars', items:[{key:'n'},{key:'n2'},{key:'2n'}], n:8, title:'at n = 8'},
+   teach:{point:"Small n, big gaps already.", sub:"Even at a small n, one class can dwarf the others.",
+          tdiagram:{kind:'bars', items:[{key:'n'},{key:'n2'},{key:'2n'}], n:8, title:'at n = 8'}},
+   q:"At only n=8, which class already needs the <b>MOST</b> operations?",
+   gates:["O(2\u207f)","O(n\u00b2)","O(n)"], correct:0,
+   why:"At n=8: 2\u207f=256 vs n\u00b2=64 vs n=8. Exponential is already far ahead even at small n."},
+
+  {lesson:2,
+   diagram:{kind:'bars', items:[{key:'logn'},{key:'n'},{key:'nlogn'}], n:32, title:'at n = 32'},
+   teach:{point:"Rank by bar length.", sub:"The shortest bar is the fastest class; the longest is the slowest.",
+          tdiagram:{kind:'bars', items:[{key:'logn'},{key:'n'},{key:'nlogn'}], n:32, title:'at n = 32'}},
+   q:"At n=32, which class is the <b>FASTEST</b> (shortest bar)?",
+   gates:["O(log n)","O(n)","O(n log n)"], correct:0,
+   why:"At any large n: log n < n < n log n. O(log n) has the shortest bar — the fastest."},
+
+  /* ===== LESSON 3 — Comparing Algorithms (head-to-head graphs) ===== */
+  {lesson:3,
+   diagram:{kind:'growth', curves:['nlogn','n2'], nMax:20, yCap:400, title:'sort A vs sort B'},
+   teach:{point:"Lower curve wins for big n.", sub:"When two curves are shown, the one that stays lower is faster.",
+          tdiagram:{kind:'growth', curves:['nlogn','n2'], nMax:20, yCap:400, title:'sort A vs sort B'}},
+   q:"Sort A is O(n log n), Sort B is O(n\u00b2). Which is <b>faster</b> for large n?",
+   gates:["Sort A (n log n)","Sort B (n\u00b2)","they tie"], correct:0,
+   why:"O(n log n) grows much slower than O(n\u00b2). For large inputs, the n log n sort (e.g. Merge Sort) wins."},
+
+  {lesson:3,
+   diagram:{kind:'growth', curves:['n','logn'], nMax:20, yCap:22, title:'A=linear  B=log'},
+   teach:{point:"Which one barely rises?", sub:"The curve that stays nearly flat scales best to huge inputs.",
+          tdiagram:{kind:'growth', curves:['n','logn'], nMax:20, yCap:22, title:'A=linear  B=log'}},
+   q:"Algorithm A is O(n), Algorithm B is O(log n). Which handles <b>huge</b> inputs better?",
+   gates:["B \u2014 O(log n)","A \u2014 O(n)","both equally"], correct:0,
+   why:"O(log n) grows far slower than O(n), so B stays fast even when inputs become enormous."},
+
+  {lesson:3,
+   diagram:{kind:'growth', curves:['n','n2'], nMax:16, yCap:300, title:'which dominates?'},
+   teach:{point:"For large n, steeper dominates.", sub:"As n grows, the faster-growing curve always overtakes the other.",
+          tdiagram:{kind:'growth', curves:['n','n2'], nMax:16, yCap:300, title:'which dominates?'}},
+   q:"In T(n) = n\u00b2 + n, which term <b>dominates</b> for large n?",
+   gates:["n\u00b2","n","they are equal"], correct:0,
+   why:"As n grows, n\u00b2 grows much faster than n, so n\u00b2 dominates → O(n\u00b2)."},
+
+  {lesson:3,
+   diagram:{kind:'growth', curves:['nlogn','n','n2'], nMax:18, yCap:340, title:'three sorts'},
+   teach:{point:"Find the slowest of three.", sub:"The steepest, highest-climbing curve is the worst performer.",
+          tdiagram:{kind:'growth', curves:['nlogn','n','n2'], nMax:18, yCap:340, title:'three sorts'}},
+   q:"Three sorting algorithms shown. Which is the <b>SLOWEST</b>?",
+   gates:["O(n\u00b2)","O(n log n)","O(n)"], correct:0,
+   why:"O(n\u00b2) climbs steepest. A quadratic sort (like Bubble Sort) is slower than n log n or linear ones."},
+
+  {lesson:3,
+   diagram:{kind:'bars', items:[{key:'n'},{key:'n2'}], n:20, title:'cost at n = 20'},
+   teach:{point:"Compare the bar values.", sub:"At a fixed n, read each bar's number to compare exact costs.",
+          tdiagram:{kind:'bars', items:[{key:'n'},{key:'n2'}], n:20, title:'cost at n = 20'}},
+   q:"At n=20, O(n)=20 and O(n\u00b2)=400. How many times <b>slower</b> is O(n\u00b2) here?",
+   gates:["20\u00d7","2\u00d7","400\u00d7"], correct:0,
+   why:"400 / 20 = 20. At n=20 the quadratic algorithm does 20 times the work of the linear one."},
+
+  {lesson:3,
+   diagram:{kind:'growth', curves:['n3','2n'], nMax:12, yCap:1500, title:'cubic vs exponential'},
+   teach:{point:"Exponential beats any polynomial.", sub:"Given enough n, an exponential curve overtakes even a steep polynomial.",
+          tdiagram:{kind:'growth', curves:['n3','2n'], nMax:12, yCap:1500, title:'cubic vs exponential'}},
+   q:"T(n) = 2\u207f + n\u00b3. Which term <b>dominates</b> for large n?",
+   gates:["O(2\u207f)","O(n\u00b3)","O(n)"], correct:0,
+   why:"Exponential growth (2\u207f) eventually exceeds ANY polynomial like n\u00b3 → O(2\u207f)."},
+
+  /* ===== LESSON 4 — Mixed Mastery (scenarios as bars/graphs) ===== */
+  {lesson:4,
+   diagram:{kind:'bars', items:[{key:'1'},{key:'n'}], n:12, title:'bookmark vs read-all'},
+   teach:{point:"Real life: opening a book.", sub:"Does the work depend on how thick the book is, or is it a fixed jump?",
+          tdiagram:{kind:'bars', items:[{key:'1'},{key:'n'}], n:12, title:'bookmark vs read-all'}},
+   q:"Opening a book straight to a <b>bookmarked page</b> (ignore the rest). Complexity?",
+   gates:["O(1)","O(n)","O(n\u00b2)"], correct:0,
+   why:"A bookmark jumps straight to one page — a fixed cost no matter how thick the book → O(1)."},
+
+  {lesson:4,
+   diagram:{kind:'bars', items:[{key:'logn'},{key:'n'}], n:16, title:'sorted phone book'},
+   teach:{point:"Real life: phone book search.", sub:"Each step throws away half the remaining pages. Count the halvings.",
+          tdiagram:{kind:'bars', items:[{key:'logn'},{key:'n'}], n:16, title:'sorted phone book'}},
+   q:"Finding a name in a <b>sorted</b> phone book by halving each time. Complexity?",
+   gates:["O(log n)","O(n)","O(1)"], correct:0,
+   why:"Halving the search space each step is binary search → O(log n). Sorted data is the key."},
+
+  {lesson:4,
+   diagram:{kind:'bars', items:[{key:'1'},{key:'n'}], n:14, title:'messy desk search'},
+   teach:{point:"Real life: messy desk search.", sub:"With no order, you may have to check every single item.",
+          tdiagram:{kind:'bars', items:[{key:'1'},{key:'n'}], n:14, title:'messy desk search'}},
+   q:"Searching an <b>unsorted</b> pile by checking each item. Worst-case complexity?",
+   gates:["O(n)","O(log n)","O(1)"], correct:0,
+   why:"With no order you may check every one of the n items → O(n). You can't halve an unsorted pile."},
+
+  {lesson:4,
+   diagram:{kind:'bars', items:[{key:'n'},{key:'n2'}], n:10, title:'everyone greets everyone'},
+   teach:{point:"Real life: everyone shakes hands.", sub:"Every person greets every other — that means counting all PAIRS.",
+          tdiagram:{kind:'bars', items:[{key:'n'},{key:'n2'}], n:10, title:'everyone greets everyone'}},
+   q:"n people each shake hands with <b>everyone else</b>. How does the count grow?",
+   gates:["O(n\u00b2)","O(n)","O(n log n)"], correct:0,
+   why:"All pairs = n(n-1)/2 handshakes. Drop constants and lower terms → O(n\u00b2)."},
+
+  {lesson:4,
+   diagram:{kind:'growth', curves:['1','logn','n','n2'], nMax:16, yCap:260, title:'rank all four'},
+   teach:{point:"Rank by height.", sub:"Lowest curve is fastest. Look for the one just above the flat bottom line.",
+          tdiagram:{kind:'growth', curves:['1','logn','n','n2'], nMax:16, yCap:260, title:'rank all four'}},
+   q:"Four curves shown. Which is the <b>2nd fastest</b> (just above the flat one)?",
+   gates:["O(log n)","O(n)","O(n\u00b2)"], correct:0,
+   why:"Order is O(1) < O(log n) < O(n) < O(n\u00b2). Just above the flat O(1) line sits O(log n)."},
+
+  {lesson:4,
+   diagram:{kind:'growth', curves:['n','nlogn','n2','2n'], nMax:12, yCap:1200, title:'four curves'},
+   teach:{point:"Find the worst of four.", sub:"The steepest curve, climbing fastest, is the worst complexity shown.",
+          tdiagram:{kind:'growth', curves:['n','nlogn','n2','2n'], nMax:12, yCap:1200, title:'four curves'}},
+   q:"Four curves are shown. Which is the <b>WORST</b> (steepest)?",
+   gates:["O(2\u207f)","O(n\u00b2)","O(n log n)"], correct:0,
+   why:"Exponential O(2\u207f) climbs faster than n\u00b2, n log n or n. It's the steepest, worst curve."},
+
+  {lesson:4,
+   diagram:{kind:'bars', items:[{key:'n'},{key:'nlogn'},{key:'n2'}], n:16, title:'n=16 comparison'},
+   teach:{point:"Middle of three.", sub:"Order the bars: which class sits between linear and quadratic?",
+          tdiagram:{kind:'bars', items:[{key:'n'},{key:'nlogn'},{key:'n2'}], n:16, title:'n=16 comparison'}},
+   q:"At n=16, which class sits <b>between</b> O(n) and O(n\u00b2)?",
+   gates:["O(n log n)","O(1)","O(2\u207f)"], correct:0,
+   why:"n < n log n < n\u00b2. At n=16: 16 < 64 < 256. O(n log n) is the middle bar."},
+
+  {lesson:4,
+   diagram:{kind:'growth', curves:['logn','n'], nMax:16, yCap:18, title:'log n vs n'},
+   teach:{point:"How big is the gap?", sub:"Compare a flat-ish curve against a straight diagonal at large n.",
+          tdiagram:{kind:'growth', curves:['logn','n'], nMax:16, yCap:18, title:'log n vs n'}},
+   q:"At n=16, O(log n)\u22484 and O(n)=16. Which scales <b>better</b>?",
+   gates:["O(log n)","O(n)","same"], correct:0,
+   why:"O(log n) grows far slower than O(n). At n=16 it's 4 vs 16; the gap widens as n grows."},
+];
+
+/* ---------------- Persistence ---------------- */
+const SAVE_KEY='algoHighwayBigO_v1';
+function loadSave(){try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):{bank:0,inv:{},skin:'amber',best:1};}catch(e){return{bank:0,inv:{},skin:'amber',best:1};}}
+function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({bank:st.bank,inv:st.inv,skin:st.skin,best:st.best}));}catch(e){}}
+const sv=loadSave();
+
+const SHOP=[
+  {id:'shield',k:'c',cost:50,ic:'🛡️',nm:'Second Chance',ds:'Survive ONE wrong gate this run.'},
+  {id:'x2',k:'c',cost:40,ic:'💰',nm:'Double Gold',ds:'Coins are worth 2× this run.'},
+  {id:'slow',k:'c',cost:30,ic:'🐢',nm:'Slow Study',ds:'Diagrams approach 30% slower this run — more reading time.'},
+  {id:'skC',k:'s',cost:120,ic:'🚗',nm:'Pink Flash',ds:'Permanent car skin.'},
+  {id:'skM',k:'s',cost:120,ic:'🚗',nm:'Violet Viper',ds:'Permanent car skin.'},
+  {id:'skG',k:'s',cost:120,ic:'🚗',nm:'Teal Turbo',ds:'Permanent car skin.'},
+];
+const SKIN={amber:'#ff9e2c',skC:'#ff6b9d',skM:'#a855f7',skG:'#5eead4'};
+
+/* ---------------- State ---------------- */
+const cv=document.getElementById('game'), cx=cv.getContext('2d');
+let W=0,H=0,laneW=0;const LANES=3;
+const st={
+  run:false, car:{lt:1,la:1,x:0,y:0}, scroll:0, base:3, sp:3,
+  cones:[], coins:[], pops:[], gates:null, diagram:null,
+  banner:null, teach:null, q:null,
+  li:0, lprog:0, nextEvt:0, nextCone:0, nextCoin:0,
+  score:0, gold:0, streak:0, best:0, qDone:0,
+  lives:3, retryGate:null,
+  asked:0, right:0, misses:[], recent:[], crash:0,
+  bank:sv.bank, inv:sv.inv, skin:sv.skin, bestL:sv.best||1,
+  pw:{shield:false,x2:false,slow:false},
+};
+
+/* teaching-card mini canvas */
+const tcv=document.getElementById('teachCanvas'), tcx=tcv.getContext('2d');
+
+function fit(){
+  const w=document.getElementById('wrap');
+  W=w.clientWidth;H=w.clientHeight;cv.width=W;cv.height=H;laneW=W/LANES;
+  st.car.x=laneW*(st.car.la+0.5);st.car.y=H-100;
+  // teach canvas backing store
+  tcv.width=tcv.clientWidth;tcv.height=tcv.clientHeight;
+}
+window.addEventListener('resize',fit);
+
+function steer(d){if(!st.run)return;st.car.lt=Math.max(0,Math.min(LANES-1,st.car.lt+d));}
+window.addEventListener('keydown',e=>{
+  if(e.repeat)return;
+  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')steer(-1);
+  if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')steer(1);
+});
+['touchstart','mousedown'].forEach(ev=>{
+  document.getElementById('tl').addEventListener(ev,e=>{e.preventDefault();steer(-1);});
+  document.getElementById('tr').addEventListener(ev,e=>{e.preventDefault();steer(1);});
+});
+
+/* ---------------- Flow ---------------- */
+function startGame(){
+  Object.assign(st,{run:true,scroll:0,base:3,sp:3,cones:[],coins:[],pops:[],
+    gates:null,diagram:null,banner:null,teach:null,q:null,
+    li:0,lprog:0,nextEvt:0,nextCone:250,nextCoin:150,
+    score:0,gold:0,streak:0,best:0,qDone:0,lives:3,retryGate:null,asked:0,right:0,misses:[],recent:[],crash:0});
+  st.car.lt=1;st.car.la=1;
+  ['shield','x2','slow'].forEach(id=>{
+    if(st.pw[id]&&(st.inv[id]||0)>0)st.inv[id]--;else st.pw[id]=false;
+  });
+  save();
+  hideAll();
+  ['startScr','endScr','revScr','shopScr'].forEach(i=>document.getElementById(i).classList.remove('show'));
+  hud();fit();
+  banner(0);
+  if(!running){running=true;requestAnimationFrame(loop);}
+}
+function hideAll(){
+  ['banner','teach','qStrip','fb'].forEach(i=>document.getElementById(i).classList.remove('show'));
+}
+
+const BAN_MS=4500;
+function banner(li){
+  st.li=li;st.lprog=0;
+  const L=LESSONS[li];
+  st.banner={t0:performance.now()};
+  document.getElementById('bnNum').textContent=`LESSON ${L.id} OF ${LESSONS.length}`;
+  document.getElementById('bnTitle').textContent=L.title;
+  document.getElementById('bnGoal').textContent=L.goal;
+  document.getElementById('bnSecs').textContent=Math.ceil(BAN_MS/1000);
+  document.getElementById('banner').classList.add('show');
+  document.getElementById('lessonChip').textContent='Lesson '+L.id+' · '+L.title;
+  st.cones=[];
+}
+function endBanner(){st.banner=null;document.getElementById('banner').classList.remove('show');startTeach();}
+
+const TEACH_MS=13000;
+function startTeach(){
+  const L=LESSONS[st.li];
+  let pool;
+  if(L.id===4)pool=BANK.filter(q=>!st.recent.includes(q));
+  else pool=BANK.filter(q=>q.lesson===L.id&&!st.recent.includes(q));
+  if(!pool.length)pool=(L.id===4)?BANK.slice():BANK.filter(q=>q.lesson===L.id);
+  const q=pool[Math.floor(Math.random()*pool.length)];
+  st.recent.push(q);if(st.recent.length>6)st.recent.shift();
+  st.q=q;
+  st.teach={t0:performance.now()};
+  // draw the teaching diagram (labelled version)
+  document.getElementById('teachBadge').textContent='LESSON '+L.id+' · STUDY THE VISUAL';
+  document.getElementById('teachPoint').textContent=q.teach.point;
+  document.getElementById('teachSub').textContent=q.teach.sub;
+  document.getElementById('teachSecs').textContent=Math.ceil(TEACH_MS/1000);
+  document.getElementById('teach').classList.add('show');
+  // render after layout settles
+  requestAnimationFrame(()=>{
+    tcv.width=tcv.clientWidth;tcv.height=tcv.clientHeight;
+    drawViz(tcx,q.teach.tdiagram||q.diagram,tcv.width,tcv.height);
+  });
+  st.cones=[];
+}
+function endTeach(){
+  st.teach=null;
+  document.getElementById('teach').classList.remove('show');
+  startQuestion(st.q);
+}
+
+function startQuestion(q){
+  st.diagram=q.diagram;
+  // 3 gates: shuffle the option order, remember which lane is correct
+  const order=[0,1,2];
+  for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+  const correctLane=order.indexOf(q.correct);
+  st.gates={
+    q, order, correctLane,
+    labels:order.map(o=>q.gates[o]),
+    y:-820,                 // gate bar starts far up; longer approach = more reading time
+    answerY:H-130,
+    resolved:false,
+  };
+  document.getElementById('qStrip').innerHTML=q.q;
+  document.getElementById('qStrip').classList.add('show');
+  st.nextCone=st.scroll+140;     // a few cones before the gate closes in
+}
+
+function resolveGate(lane){
+  const G=st.gates;if(!G||G.resolved)return;
+  G.resolved=true;
+  st.cones=[];
+  const ok=lane===G.correctLane;
+  const q=G.q;
+
+  if(ok){
+    st.gates=null;
+    document.getElementById('qStrip').classList.remove('show');
+    st.asked++;
+    st.right++;
+    // Streak-scaled scoring with a growing combo multiplier (more fun, rewards mastery)
+    st.streak++;
+    st.best=Math.max(st.best,st.streak);
+    const mult=Math.min(5,1+Math.floor(st.streak/3));   // x1..x5 as streak grows
+    st.score+=(120+st.streak*15)*mult;
+    st.qDone++;st.lprog++;
+    // Gold reward, boosted on hot streaks and by the Double-Gold power-up
+    let reward=3;
+    if(st.streak>=9)reward=7; else if(st.streak>=6)reward=5; else if(st.streak>=3)reward=4;
+    if(st.pw.x2)reward*=2;
+    st.gold+=reward;
+    // Fun celebratory header that escalates with the streak
+    let head='✓ CORRECT';
+    if(st.streak>=12)head='🔥 UNSTOPPABLE! x'+mult;
+    else if(st.streak>=9)head='⚡ ON FIRE! x'+mult;
+    else if(st.streak>=6)head='🌟 GREAT STREAK! x'+mult;
+    else if(st.streak>=3)head='✨ NICE! x'+mult;
+    feedback(true,head+'  +'+reward+' 💰',q.why);
+    const L=LESSONS[st.li];
+    const done=st.lprog>=L.clearAfter && st.li<LESSONS.length-1;
+    setTimeout(()=>{
+      hideFb();
+      if(done){
+        const ni=st.li+1;st.bestL=Math.max(st.bestL,LESSONS[ni].id);save();
+        setTimeout(()=>banner(ni),40);
+      }else{
+        st.nextEvt=st.scroll+800+Math.random()*240;
+        st.nextCone=st.scroll+280;st.nextCoin=st.scroll+150;
+      }
+    },2600);
+    hud();
+  }else{
+    // WRONG — teach instead of ending the run.
+    st.streak=0;
+    if(!G.wrongOnce){          // first wrong on this question: count it as a miss
+      st.asked++;
+      st.misses.push(q);
+      G.wrongOnce=true;
+    }
+    // Shield power-up: auto-pass this question with the explanation shown
+    if(st.pw.shield){
+      st.pw.shield=false;
+      st.gates=null;
+      document.getElementById('qStrip').classList.remove('show');
+      feedback(false,'🛡️ SHIELD USED — here\u2019s why',q.why,G);
+      setTimeout(()=>{
+        hideFb();
+        st.nextEvt=st.scroll+800+Math.random()*240;
+        st.nextCone=st.scroll+280;st.nextCoin=st.scroll+150;
+      },3200);
+      hud();
+      return;
+    }
+    st.lives--;
+    hud();
+    if(st.lives>0){
+      // Show WHY, then let the SAME diagram come back so the student can apply it.
+      feedback(false,'✗ NOT QUITE — learn & retry ('+st.lives+' ❤️ left)',q.why,G);
+      setTimeout(()=>{
+        hideFb();
+        // Re-arm the very same question as a retry (gate descends again).
+        retryQuestion(q);
+      },3400);
+    }else{
+      // Out of lives: still show the explanation, then end.
+      feedback(false,'✗ OUT OF LIVES',q.why,G);
+      st.gates=null;
+      document.getElementById('qStrip').classList.remove('show');
+      setTimeout(()=>{hideFb();endRun('Ran out of lives');},3600);
+    }
+  }
+}
+
+// Bring the SAME question back so the learner can apply what they just read.
+function retryQuestion(q){
+  const order=[0,1,2];
+  for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+  const correctLane=order.indexOf(q.correct);
+  st.diagram=q.diagram;
+  st.gates={
+    q, order, correctLane,
+    labels:order.map(o=>q.gates[o]),
+    y:-820, answerY:H-130, resolved:false,
+    wrongOnce:true,            // already counted as a miss; don't double-count
+    isRetry:true,
+  };
+  document.getElementById('qStrip').innerHTML='🔁 TRY AGAIN: '+q.q;
+  document.getElementById('qStrip').classList.add('show');
+  st.nextCone=st.scroll+99999;  // no cones during a retry — focus on learning
+}
+
+function feedback(ok,head,why,G){
+  const f=document.getElementById('fb');
+  f.className='show '+(ok?'ok':'no');
+  document.getElementById('fbHead').textContent=head;
+  let whyText=why;
+  // On a wrong answer, explicitly tell the learner which gate was correct.
+  if(!ok && G && G.q){
+    const correctLabel=G.q.gates[G.q.correct];
+    whyText='✓ Correct gate: '+correctLabel+'\n\n'+why;
+  }
+  document.getElementById('fbWhy').textContent=whyText;
+}
+function hideFb(){document.getElementById('fb').classList.remove('show');}
+
+function endRun(reason){
+  st.run=false;st.bank+=st.gold;save();
+  document.getElementById('fScore').textContent=st.score;
+  document.getElementById('fLesson').textContent=LESSONS[st.li].id+' · '+LESSONS[st.li].title;
+  document.getElementById('fQ').textContent=st.qDone;
+  document.getElementById('fAcc').textContent=(st.asked?Math.round(100*st.right/st.asked):0)+'%';
+  document.getElementById('fGold').textContent=st.gold;
+  document.getElementById('fBank').textContent=st.bank;
+  document.getElementById('eReason').textContent=reason||'Run complete';
+  document.getElementById('eTitle').textContent=st.li===LESSONS.length-1?'MASTERY RUN':'RUN OVER';
+  document.getElementById('revBtn').style.display=st.misses.length?'':'none';
+  document.getElementById('endScr').classList.add('show');
+}
+function backToEnd(){document.getElementById('revScr').classList.remove('show');document.getElementById('endScr').classList.add('show');}
+function showReview(){
+  const l=document.getElementById('revList');l.innerHTML='';
+  if(!st.misses.length)l.innerHTML='<p style="opacity:.6">No misses — clean run!</p>';
+  else st.misses.forEach((q,idx)=>{
+    const d=document.createElement('div');d.className='rc';
+    d.innerHTML=`<canvas id="rv${idx}"></canvas>
+      <div style="font-size:12px">${q.q}</div>
+      <div class="rt">✓ ${q.gates[q.correct]}</div>
+      <div style="font-size:11px;line-height:1.45">${q.why}</div>`;
+    l.appendChild(d);
+    const c=d.querySelector('canvas');
+    requestAnimationFrame(()=>{c.width=c.clientWidth;c.height=c.clientHeight;drawViz(c.getContext('2d'),q.teach.tdiagram||q.diagram,c.width,c.height);});
+  });
+  document.getElementById('endScr').classList.remove('show');
+  document.getElementById('revScr').classList.add('show');
+}
+
+/* ---------------- Spawns ---------------- */
+function spawnCone(){st.cones.push({lane:Math.floor(Math.random()*LANES),y:-50,hit:false});}
+function spawnCoins(){const ln=Math.floor(Math.random()*LANES);const n=1+Math.floor(Math.random()*4);for(let i=0;i<n;i++)st.coins.push({lane:ln,y:-50-i*40,got:false,sp:Math.random()*6.28});}
+
+/* ---------------- Loop ---------------- */
+let running=false,lastT=0;
+function loop(t){
+  if(!running)return;
+  lastT=t;
+  if(st.run)update();
+  render();
+  requestAnimationFrame(loop);
+}
+
+function update(){
+  const tx=laneW*(st.car.lt+0.5);
+  st.car.x+=(tx-st.car.x)*0.25;
+  st.car.la=st.car.x/laneW-0.5;
+
+  if(st.banner){
+    st.sp=st.base*0.12;st.scroll+=st.sp;
+    const r=Math.max(0,BAN_MS-(performance.now()-st.banner.t0));
+    document.getElementById('bnSecs').textContent=Math.ceil(r/1000);
+    if(r<=0)endBanner();
+    return;
+  }
+  if(st.teach){
+    st.sp=st.base*0.14;st.scroll+=st.sp;
+    const r=Math.max(0,TEACH_MS-(performance.now()-st.teach.t0));
+    document.getElementById('teachSecs').textContent=Math.ceil(r/1000);
+    if(r<=0)endTeach();
+    return;
+  }
+
+  if(st.gates){
+    const G=st.gates;
+    const dist=G.answerY-G.y;             // distance until the gate reaches the car
+    const slowZone=420;                   // wider zone: gate eases off sooner, more reading time
+    let target;
+    if(dist>slowZone)target=st.base;      // far: full speed, dodge cones
+    else target=st.base*(0.16+0.6*Math.max(0,dist/slowZone)); // slows as it nears
+    if(st.pw.slow)target*=0.7;
+    st.sp+=(target-st.sp)*0.12;
+    st.scroll+=st.sp;
+    const step=0.5+st.sp*0.16;            // gentler gate descent so labels stay readable longer
+    G.y+=step;
+
+    const dodging=dist>slowZone;
+    if(dodging&&st.scroll>=st.nextCone){spawnCone();st.nextCone=st.scroll+170+Math.random()*110;}
+    st.cones.forEach(o=>o.y+=st.sp);
+    st.cones=st.cones.filter(o=>o.y<H+100);
+    if(dodging)st.cones.forEach(o=>{
+      if(!o.hit&&Math.abs(o.lane-st.car.la)<0.5&&Math.abs(o.y-st.car.y)<40){o.hit=true;st.crash=20;st.streak=0;hud();}
+    });
+    if(st.crash>0)st.crash--;
+
+    if(G.y>=G.answerY){
+      resolveGate(Math.max(0,Math.min(LANES-1,Math.round(st.car.la))));
+    }
+    return;
+  }
+
+  // free driving
+  st.sp+=(st.base-st.sp)*0.1;st.scroll+=st.sp;
+  if(st.scroll>=st.nextEvt){startTeach();return;}
+  if(st.scroll>=st.nextCone){spawnCone();st.nextCone=st.scroll+170+Math.random()*110-Math.min(50,st.streak*3);}
+  st.cones.forEach(o=>o.y+=st.sp);st.cones=st.cones.filter(o=>o.y<H+100);
+  if(st.scroll>=st.nextCoin){spawnCoins();st.nextCoin=st.scroll+220+Math.random()*180;}
+  st.coins.forEach(c=>{c.y+=st.sp;c.sp+=0.15;});
+  st.coins=st.coins.filter(c=>c.y<H+60&&!c.got);
+  st.coins.forEach(c=>{
+    if(!c.got&&Math.abs(c.lane-st.car.la)<0.5&&Math.abs(c.y-st.car.y)<36){
+      c.got=true;const v=st.pw.x2?2:1;st.gold+=v;
+      st.pops.push({x:st.car.x,y:st.car.y-20,a:0,v});hud();
+    }
+  });
+  st.pops.forEach(p=>{p.y-=1.5;p.a++;});st.pops=st.pops.filter(p=>p.a<50);
+  st.cones.forEach(o=>{
+    if(!o.hit&&Math.abs(o.lane-st.car.la)<0.5&&Math.abs(o.y-st.car.y)<40){o.hit=true;st.crash=20;st.streak=0;hud();}
+  });
+  if(st.crash>0)st.crash--;
+}
+
+/* ---------------- Render ---------------- */
+function render(){
+  // Sunset sky gradient backdrop
+  const sky=cx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#3d1a52');
+  sky.addColorStop(0.35,'#7a2a5c');
+  sky.addColorStop(0.55,'#c2410c');
+  sky.addColorStop(0.62,'#1a1430');
+  sky.addColorStop(1,'#0f0a1f');
+  cx.fillStyle=sky;cx.fillRect(0,0,W,H);
+
+  // Distant sun glow near the horizon (~58% down)
+  const hY=H*0.58;
+  const sun=cx.createRadialGradient(W/2,hY,4,W/2,hY,W*0.5);
+  sun.addColorStop(0,'rgba(255,200,120,0.55)');
+  sun.addColorStop(0.5,'rgba(255,120,90,0.18)');
+  sun.addColorStop(1,'rgba(255,120,90,0)');
+  cx.fillStyle=sun;cx.fillRect(0,0,W,H);
+
+  // Road surface (darker trapezoid feel via flat dark below horizon)
+  cx.fillStyle='rgba(15,10,31,0.55)';cx.fillRect(0,hY,W,H-hY);
+
+  // Lane dividers — warm dashed neon, scrolling
+  cx.strokeStyle='rgba(255,180,120,.55)';cx.lineWidth=3;cx.setLineDash([26,26]);
+  cx.lineDashOffset=-st.scroll%52;
+  for(let i=1;i<LANES;i++){cx.beginPath();cx.moveTo(laneW*i,hY*0.0);cx.lineTo(laneW*i,H);cx.stroke();}
+  cx.setLineDash([]);
+
+  // Glowing road edges (hot pink → amber)
+  cx.save();
+  cx.shadowColor='rgba(255,77,141,.9)';cx.shadowBlur=12;
+  cx.strokeStyle='#ff4d8d';cx.lineWidth=4;
+  cx.beginPath();cx.moveTo(3,0);cx.lineTo(3,H);cx.stroke();
+  cx.shadowColor='rgba(255,158,44,.9)';
+  cx.strokeStyle='#ff9e2c';
+  cx.beginPath();cx.moveTo(W-3,0);cx.lineTo(W-3,H);cx.stroke();
+  cx.restore();
+
+  st.cones.forEach(o=>cone(laneW*(o.lane+0.5),o.y,o.hit));
+  st.coins.forEach(c=>{if(!c.got)coin(laneW*(c.lane+0.5),c.y,c.sp);});
+
+  // Diagram billboard + 3 gates while a question is active
+  if(st.gates)drawGates();
+
+  car(st.car.x,st.car.y);
+  st.pops.forEach(p=>{cx.fillStyle=`rgba(255,200,120,${1-p.a/50})`;cx.font='900 18px Inter,system-ui';cx.textAlign='center';cx.fillText('+'+(p.v||1),p.x,p.y);});
+  if(st.crash>0){cx.fillStyle=`rgba(255,84,112,${st.crash/40})`;cx.fillRect(0,0,W,H);}
+}
+
+function drawGates(){
+  const G=st.gates;
+  // 1) Persistent visual billboard at the top — bright panel so the graph reads cleanly
+  const bx=10, bw=W-20, by=64, bh=Math.min(210,H*0.30);
+  cx.save();
+  cx.shadowColor='rgba(255,77,141,.5)';cx.shadowBlur=18;
+  cx.fillStyle='#ffffff';cx.fillRect(bx,by,bw,bh);
+  cx.restore();
+  // gradient border (sunset)
+  const bg=cx.createLinearGradient(bx,by,bx+bw,by+bh);
+  bg.addColorStop(0,'#ff9e2c');bg.addColorStop(0.5,'#ff4d8d');bg.addColorStop(1,'#c724b1');
+  cx.strokeStyle=bg;cx.lineWidth=3;cx.strokeRect(bx,by,bw,bh);
+  drawVizClipped(cx, st.diagram, bx+6, by+6, bw-12, bh-12);
+
+  // 2) The 3 descending gate panels — sunset gradient body, dark text
+  const gy=G.y, gh=104;
+  for(let ln=0;ln<LANES;ln++){
+    const gx=laneW*ln+6, gw=laneW-12;
+    // panel gradient (light warm)
+    const pg=cx.createLinearGradient(gx,gy-gh/2,gx,gy+gh/2);
+    pg.addColorStop(0,'#fff5e6');pg.addColorStop(1,'#fbe4cf');
+    cx.fillStyle=pg;
+    cx.fillRect(gx,gy-gh/2,gw,gh);
+    // colour-coded gradient border per lane
+    const borderColors=[['#ff9e2c','#ff4d8d'],['#ff4d8d','#c724b1'],['#c724b1','#5eead4']];
+    const bc=cx.createLinearGradient(gx,gy-gh/2,gx+gw,gy+gh/2);
+    bc.addColorStop(0,borderColors[ln][0]);bc.addColorStop(1,borderColors[ln][1]);
+    cx.strokeStyle=bc;cx.lineWidth=3;
+    cx.strokeRect(gx,gy-gh/2,gw,gh);
+    cx.fillStyle='#1a1430';
+    cx.textAlign='center';cx.textBaseline='middle';
+
+    // Measurement-based word wrap.
+    const label = G.labels[ln];
+    const maxW = gw - 8;
+    const tryFont = (fs) => {
+      cx.font = '900 ' + fs + 'px Inter,system-ui';
+      const words = label.split(/\s+/);
+      const lines = [];
+      let cur = '';
+      for (const w of words) {
+        const test = cur ? cur + ' ' + w : w;
+        if (cx.measureText(test).width <= maxW) cur = test;
+        else { if (cur) lines.push(cur); cur = w; }
+      }
+      if (cur) lines.push(cur);
+      const ok = lines.length <= 3 && lines.every(l => cx.measureText(l).width <= maxW);
+      return ok ? lines : null;
+    };
+    let fs = 21, lines = tryFont(fs);
+    if (!lines) { fs = 18; lines = tryFont(fs); }
+    if (!lines) { fs = 15; lines = tryFont(fs); }
+    if (!lines) { fs = 12; lines = tryFont(fs) || [label]; }   // last resort
+
+    cx.font = '900 ' + fs + 'px Inter,system-ui';
+    const lh = fs + 4;
+    const totalH = lh * lines.length;
+    const startY = gy - totalH/2 + lh/2;
+    lines.forEach((t, i) => {
+      cx.fillText(t, gx + gw/2, startY + i * lh);
+    });
+  }
+}
+
+// draw a UML spec clipped/centered into a screen rect
+function drawVizClipped(g, spec, rx, ry, rw, rh){
+  g.save();
+  g.beginPath();g.rect(rx,ry,rw,rh);g.clip();
+  g.translate(rx,ry);
+  drawViz(g, spec, rw, rh);
+  g.restore();
+}
+
+function cone(x,y,hit){
+  cx.save();cx.translate(x,y);
+  cx.fillStyle='rgba(0,0,0,.45)';cx.beginPath();cx.ellipse(2,18,24,6,0,0,6.28);cx.fill();
+  cx.fillStyle=hit?'#6b2a3a':'#ff5470';
+  cx.beginPath();cx.moveTo(0,-28);cx.lineTo(20,18);cx.lineTo(-20,18);cx.closePath();cx.fill();
+  cx.fillStyle='#fdf0e6';cx.fillRect(-15,-2,30,6);cx.fillRect(-18,10,36,5);
+  cx.fillStyle='#1a1430';cx.fillRect(-22,18,44,6);
+  cx.restore();
+}
+function coin(x,y,s){
+  cx.save();cx.translate(x,y);const p=Math.sin(s||0)*2;
+  // warm glow
+  const gl=cx.createRadialGradient(0,0,2,0,0,18);
+  gl.addColorStop(0,'rgba(255,200,120,.6)');gl.addColorStop(1,'rgba(255,200,120,0)');
+  cx.fillStyle=gl;cx.beginPath();cx.arc(0,0,18,0,6.28);cx.fill();
+  cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(2,14,12,3,0,0,6.28);cx.fill();
+  cx.fillStyle='#ffc878';cx.beginPath();cx.arc(0,0,13+p*.3,0,6.28);cx.fill();
+  cx.strokeStyle='#ff9e2c';cx.lineWidth=2;cx.beginPath();cx.arc(0,0,9,0,6.28);cx.stroke();
+  cx.fillStyle='#b45309';cx.font='900 13px Inter,system-ui';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('$',0,1);
+  cx.restore();
+}
+function car(x,y){
+  cx.save();cx.translate(x,y);
+  const col=SKIN[st.skin]||SKIN.amber;
+  // Neon underglow
+  const ug=cx.createRadialGradient(0,10,4,0,10,40);
+  ug.addColorStop(0,'rgba(255,77,141,.55)');ug.addColorStop(1,'rgba(255,77,141,0)');
+  cx.fillStyle=ug;cx.beginPath();cx.ellipse(0,18,30,30,0,0,6.28);cx.fill();
+  // ground shadow
+  cx.fillStyle='rgba(0,0,0,.45)';cx.beginPath();cx.ellipse(0,38,22,7,0,0,6.28);cx.fill();
+
+  // Sharp sports-car silhouette (pointed nose, wide rear) via a path
+  cx.beginPath();
+  cx.moveTo(0,-46);          // nose tip
+  cx.lineTo(16,-26);         // right front fender
+  cx.lineTo(20,2);
+  cx.lineTo(24,30);          // wide rear right
+  cx.lineTo(16,42);
+  cx.lineTo(-16,42);
+  cx.lineTo(-24,30);         // wide rear left
+  cx.lineTo(-20,2);
+  cx.lineTo(-16,-26);
+  cx.closePath();
+  // body gradient (sunset two-tone)
+  const bg=cx.createLinearGradient(0,-46,0,42);
+  bg.addColorStop(0,col);
+  bg.addColorStop(1,shade(col,-40));
+  cx.fillStyle=bg;cx.fill();
+  cx.strokeStyle='rgba(255,255,255,.35)';cx.lineWidth=2;cx.stroke();
+
+  // central racing stripe
+  cx.fillStyle='rgba(255,255,255,.18)';
+  cx.beginPath();cx.moveTo(0,-40);cx.lineTo(6,-20);cx.lineTo(6,36);cx.lineTo(-6,36);cx.lineTo(-6,-20);cx.closePath();cx.fill();
+
+  // windshield (tinted, angled)
+  cx.fillStyle='rgba(94,234,212,.85)';
+  cx.beginPath();cx.moveTo(-11,-18);cx.lineTo(11,-18);cx.lineTo(9,0);cx.lineTo(-9,0);cx.closePath();cx.fill();
+  // rear window
+  cx.fillStyle='rgba(94,234,212,.5)';
+  cx.beginPath();cx.moveTo(-10,10);cx.lineTo(10,10);cx.lineTo(11,24);cx.lineTo(-11,24);cx.closePath();cx.fill();
+
+  // rear spoiler
+  cx.fillStyle=shade(col,-55);
+  cx.fillRect(-22,40,44,5);
+  cx.fillRect(-22,38,5,7);cx.fillRect(17,38,5,7);
+
+  // headlights (front, bright)
+  cx.fillStyle='#fff8e1';cx.beginPath();cx.moveTo(-13,-26);cx.lineTo(-6,-30);cx.lineTo(-6,-24);cx.closePath();cx.fill();
+  cx.beginPath();cx.moveTo(13,-26);cx.lineTo(6,-30);cx.lineTo(6,-24);cx.closePath();cx.fill();
+  // tail lights (red glow)
+  cx.fillStyle='#ff5470';cx.fillRect(-18,34,9,4);cx.fillRect(9,34,9,4);
+  cx.restore();
+}
+// lighten(+)/darken(-) a hex colour by an amount (-255..255)
+function shade(hex,amt){
+  let c=hex.replace('#','');
+  if(c.length===3)c=c.split('').map(x=>x+x).join('');
+  let r=Math.max(0,Math.min(255,parseInt(c.substr(0,2),16)+amt));
+  let g=Math.max(0,Math.min(255,parseInt(c.substr(2,2),16)+amt));
+  let b=Math.max(0,Math.min(255,parseInt(c.substr(4,2),16)+amt));
+  return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+
+/* ---------------- HUD / Shop ---------------- */
+function hud(){
+  document.getElementById('vScore').textContent=st.score;
+  document.getElementById('vLives').textContent='❤️'.repeat(Math.max(0,st.lives))||'💀';
+  document.getElementById('vGold').textContent=st.gold;
+  document.getElementById('vAcc').textContent=st.asked?Math.round(100*st.right/st.asked)+'%':'—';
+  const sb=document.getElementById('sBank');if(sb)sb.textContent=st.bank;
+  // Combo chip — shows current hot streak (appears at 2+)
+  const cc=document.getElementById('comboChip');
+  if(cc){
+    if(st.streak>=2){
+      const mult=Math.min(5,1+Math.floor(st.streak/3));
+      document.getElementById('vCombo').textContent='🔥 '+st.streak+' COMBO  x'+mult;
+      cc.classList.add('show');
+    }else{
+      cc.classList.remove('show');
+    }
+  }
+}
+function pills(){
+  const w=document.getElementById('pPills');w.innerHTML='';let any=false;
+  SHOP.filter(i=>i.k==='c').forEach(it=>{
+    const o=st.inv[it.id]||0;if(o<=0)return;any=true;
+    const on=!!st.pw[it.id];const b=document.createElement('button');
+    b.className=on?'on':'';b.innerHTML=`${it.ic} ${it.nm} ×${o}`;
+    b.onclick=()=>{st.pw[it.id]=!on;pills();};w.appendChild(b);
+  });
+  if(!any){const h=document.createElement('div');h.style.cssText='font-size:10px;opacity:.5;letter-spacing:1px';h.textContent='Earn gold → buy power-ups in the Market';w.appendChild(h);}
+}
+function showShop(){['startScr','endScr','revScr'].forEach(i=>document.getElementById(i).classList.remove('show'));document.getElementById('shopScr').classList.add('show');shop();}
+function closeShop(){document.getElementById('shopScr').classList.remove('show');document.getElementById('startScr').classList.add('show');hud();pills();}
+function shop(){
+  document.getElementById('shBank').textContent=st.bank;
+  const g=document.getElementById('shGrid');g.innerHTML='';
+  SHOP.forEach(it=>{
+    const d=document.createElement('div');d.className='si';
+    const o=st.inv[it.id]||0,sk=it.k==='s',os=sk&&o,eq=sk&&st.skin===it.id;
+    let btn;
+    if(sk){
+      if(eq)btn='<button class="eq" disabled>EQUIPPED</button>';
+      else if(os)btn=`<button onclick="equip('${it.id}')">EQUIP</button>`;
+      else btn=`<button onclick="buy('${it.id}')" ${st.bank<it.cost?'disabled':''}>BUY</button>`;
+    }else btn=`<button onclick="buy('${it.id}')" ${st.bank<it.cost?'disabled':''}>BUY +1</button>`;
+    const cn=(!sk&&o>0)?`<span class="cn">OWN ×${o}</span>`:'';
+    d.innerHTML=`<div class="ic" ${sk?`style="color:${SKIN[it.id]}"`:''}>${it.ic}</div>
+      <div class="bd"><div class="nm">${it.nm}</div><div class="ds">${it.ds}</div>
+      <div class="ft"><span class="ct">💰 ${it.cost}</span><span style="display:flex;gap:8px;align-items:center">${cn}${btn}</span></div></div>`;
+    g.appendChild(d);
+  });
+}
+function buy(id){const it=SHOP.find(s=>s.id===id);if(!it||st.bank<it.cost)return;if(it.k==='s'&&st.inv[id])return;st.bank-=it.cost;st.inv[id]=(st.inv[id]||0)+1;if(it.k==='s')st.skin=id;save();shop();}
+function equip(id){if(!st.inv[id])return;st.skin=id;save();shop();}
+
+/* ---------------- Boot ---------------- */
+fit();hud();pills();
+running=true;requestAnimationFrame(loop);
+</script>
+</body>
+</html>
