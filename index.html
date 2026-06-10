@@ -240,9 +240,17 @@
       <div><b>Lesson 4 ·</b> Mixed — real-world scenarios & exponential blow-ups</div>
     </div>
     <div id="pPills" class="pp"></div>
+    <div style="margin:14px auto 4px;max-width:340px;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:12px 14px">
+      <label for="pcInput" style="display:block;font-size:12px;font-weight:700;margin-bottom:5px">🎓 Player Code <span style="opacity:.6;font-weight:400">— your pseudonymous code (not your name/email)</span></label>
+      <input id="pcInput" placeholder="Enter Your Player Code " autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:#fff;font-size:14px">
+      <div id="pcWarn" style="color:#ffb4b4;font-size:11px;min-height:14px;margin-top:5px"></div>
+      <label style="display:flex;align-items:center;gap:7px;font-size:11px;opacity:.85;cursor:pointer"><input type="checkbox" id="pcConsent" checked> My play may be logged for the course study</label>
+      <div style="font-size:10px;opacity:.55;margin-top:6px">Use the <b>same code</b> here and in the GPAF Player tool. Nothing is uploaded — you export a log file yourself.</div>
+    </div>
     <div class="ch"><span class="k">←</span> <span class="k">→</span> or <span class="k">A</span> <span class="k">D</span> to choose your gate</div>
-    <button class="btn" onclick="startGame()">▶ START LESSON 1</button>
+    <button class="btn" onclick="tryStart()">▶ START LESSON 1</button>
     <button class="btn sec" onclick="showShop()">🏪 MARKET (<span id="sBank">0</span> 💰)</button>
+    <button class="btn sec" onclick="gpafDownload()">⤓ DOWNLOAD GPAF LOG</button>
     <p style="font-size:10px;opacity:.5;margin-top:12px">Analysis of Algorithms · Asymptotic Complexity</p>
   </div>
 
@@ -255,9 +263,10 @@
     <div class="sr"><span class="sl">Accuracy</span><span class="sv" id="fAcc">0%</span></div>
     <div class="sr"><span class="sl">💰 Gold This Run</span><span class="sv" id="fGold">0</span></div>
     <div class="sr"><span class="sl">🏦 Total Bank</span><span class="sv" id="fBank">0</span></div>
-    <button class="btn" onclick="startGame()">▶ TRY AGAIN</button>
+    <button class="btn" onclick="tryStart()">▶ TRY AGAIN</button>
     <button class="btn sec" onclick="showShop()">🏪 MARKET</button>
     <button class="btn sec" onclick="showReview()" id="revBtn">📖 REVIEW</button>
+    <button class="btn sec" onclick="gpafDownload()">⤓ DOWNLOAD GPAF LOG</button>
   </div>
 
   <div class="scr" id="revScr">
@@ -725,6 +734,52 @@ window.addEventListener('keydown',e=>{
   document.getElementById('tr').addEventListener(ev,e=>{e.preventDefault();steer(1);});
 });
 
+/* ---------------- GPAF logging (player code + event log + JSONL export) ----------------
+   Emits the GPAF log-format v1.0 events the team/player tools expect:
+   session_start | score_update | level_complete | session_end
+   keyed by the player's pseudonymous code and this team's Game ID. */
+const GPAF_GAME_ID='GM-C4E9F77E1089';            // this team's Game ID (from the GPAF tool)
+const GPAF_LOG_KEY='algoHighwayBigO_gpafLogs_v1';// accumulated events (all sessions)
+const GPAF_CODE_KEY='algoHighwayBigO_playerCode_v1';
+let GPAF_SESSION=null, GPAF_LOG_OK=true;
+function gpafLoad(){try{const r=localStorage.getItem(GPAF_LOG_KEY);return r?JSON.parse(r):[];}catch(e){return[];}}
+function gpafSaveAll(a){try{localStorage.setItem(GPAF_LOG_KEY,JSON.stringify(a));}catch(e){}}
+function gpafEmit(type,payload){
+  if(!GPAF_LOG_OK||!GPAF_SESSION)return;
+  const all=gpafLoad();
+  all.push({ts:new Date().toISOString(),playerPseudoId:GPAF_SESSION.code,sessionId:GPAF_SESSION.sid,gameId:GPAF_GAME_ID,eventType:type,payload:payload||{}});
+  gpafSaveAll(all);
+}
+function gpafValidCode(c){return c&&c.indexOf('@')<0&&!/\s/.test(c);}
+function gpafBeginRun(){
+  const inp=document.getElementById('pcInput'), warn=document.getElementById('pcWarn');
+  let code=((inp&&inp.value.trim())||(localStorage.getItem(GPAF_CODE_KEY)||'')).trim();
+  if(!code){if(warn)warn.textContent='Enter a player code first (use the SAME code in the GPAF Player tool).';if(inp)inp.focus();return false;}
+  if(!gpafValidCode(code)){if(warn)warn.textContent='No @ or spaces — use a pseudonymous code, not your name/email.';if(inp)inp.focus();return false;}
+  if(warn)warn.textContent='';
+  try{localStorage.setItem(GPAF_CODE_KEY,code);}catch(e){}
+  const cons=document.getElementById('pcConsent');
+  GPAF_LOG_OK=!cons||cons.checked;
+  GPAF_SESSION={code:code, sid:'s'+Date.now().toString(36)};
+  gpafEmit('session_start',{});
+  return true;
+}
+function gpafDownload(){
+  const all=gpafLoad();
+  if(!all.length){alert('No GPAF log yet — enter your code and play at least one run first.');return;}
+  const code=(localStorage.getItem(GPAF_CODE_KEY)||'me').replace(/[^A-Za-z0-9_-]/g,'');
+  const text=all.map(e=>JSON.stringify(e)).join('\n')+'\n';
+  const b=new Blob([text],{type:'application/x-ndjson'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download='gpaf_log_'+code+'.jsonl';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+function tryStart(){ if(gpafBeginRun()) startGame(); }
+window.addEventListener('DOMContentLoaded',()=>{
+  const inp=document.getElementById('pcInput'); if(!inp)return;
+  const c=localStorage.getItem(GPAF_CODE_KEY); if(c)inp.value=c;
+});
+
 /* ---------------- Flow ---------------- */
 function startGame(){
   Object.assign(st,{run:true,scroll:0,base:3,sp:3,cones:[],coins:[],pops:[],
@@ -832,6 +887,7 @@ function resolveGate(lane){
     if(st.streak>=9)reward=7; else if(st.streak>=6)reward=5; else if(st.streak>=3)reward=4;
     if(st.pw.x2)reward*=2;
     st.gold+=reward;
+    gpafEmit('score_update',{score:st.score});
     // Fun celebratory header that escalates with the streak
     let head='✓ CORRECT';
     if(st.streak>=12)head='🔥 UNSTOPPABLE! x'+mult;
@@ -844,6 +900,7 @@ function resolveGate(lane){
     setTimeout(()=>{
       hideFb();
       if(done){
+        gpafEmit('level_complete',{level:LESSONS[st.li].id});
         const ni=st.li+1;st.bestL=Math.max(st.bestL,LESSONS[ni].id);save();
         setTimeout(()=>banner(ni),40);
       }else{
@@ -928,6 +985,8 @@ function hideFb(){document.getElementById('fb').classList.remove('show');}
 
 function endRun(reason){
   st.run=false;st.bank+=st.gold;save();
+  gpafEmit('session_end',{completed: st.li===LESSONS.length-1, finalScore: st.score, lessonReached: LESSONS[st.li].id, accuracy: st.asked?Math.round(100*st.right/st.asked):0});
+  GPAF_SESSION=null;
   document.getElementById('fScore').textContent=st.score;
   document.getElementById('fLesson').textContent=LESSONS[st.li].id+' · '+LESSONS[st.li].title;
   document.getElementById('fQ').textContent=st.qDone;
